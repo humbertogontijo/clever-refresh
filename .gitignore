@@ -128,5 +128,5 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-products.txt
+clever_products.txt
 .idea

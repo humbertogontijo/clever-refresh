@@ -5,15 +5,34 @@ from sys import argv
 import requests
 
 
+class SwapPagesParser(HTMLParser):
+    def __init__(self):
+        HTMLParser.__init__(self)
+        self.num_pages = []
+        self.inLink = None
+
+    def handle_starttag(self, tag, attrs):
+        if tag == 'div':
+            for name, value in attrs:
+                if name == 'class' and value == 'pagination':
+                    self.inLink = True
+
+    def handle_endtag(self, tag):
+        if tag == "div":
+            self.inLink = False
+
+    def handle_data(self, data):
+        if self.inLink and data.isnumeric():
+            self.num_pages = int(data)
+
+
 class SwapProductsParser(HTMLParser):
     def __init__(self):
         HTMLParser.__init__(self)
         self.products = []
-        self.notAllowed = ["<", ">", "(", ")", "{", "}", "="]
         self.inLink = None
 
     def handle_starttag(self, tag, attrs):
-        self.inLink = False
         if tag == 'span':
             for name, value in attrs:
                 if name == 'class' and value == 'grid-product__title':
@@ -24,16 +43,14 @@ class SwapProductsParser(HTMLParser):
             self.inLink = False
 
     def handle_data(self, data):
-        trimmed = data.strip('\n ')
-        if self.inLink and not any([char in data for char in self.notAllowed]) and trimmed != '':
-            self.products.append(trimmed)
+        if self.inLink:
+            self.products.append(data)
 
 
 def main():
     url = "https://shop.clevertech.biz/password"
     catalog_url = "https://shop.clevertech.biz/collections/all?page={}"
-    page_num = 3
-    file_name = "products.txt"
+    file_name = "clever_products.txt"
     delimiter = "\n"
 
     with requests.Session() as session:
@@ -43,9 +60,15 @@ def main():
                    'password': password}
         session.request("POST", url, data=payload)
 
+        # Get num of pages
+        page_parser = SwapPagesParser()
+        response = session.get(catalog_url.format(1))
+        page_parser.feed(response.text)
+        num_pages = page_parser.num_pages
+
         # Fetch products from shop catalog
         parser = SwapProductsParser()
-        for i in range(page_num):
+        for i in range(num_pages):
             response = session.get(catalog_url.format(i + 1))
             parser.feed(response.text)
         live_products = parser.products
