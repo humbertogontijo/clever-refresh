@@ -128,5 +128,7 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-clever_products.txt
 .idea
+
+clever_products.txt
+session
