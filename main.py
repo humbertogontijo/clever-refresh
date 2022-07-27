@@ -66,7 +66,7 @@ def main():
     catalog_url = "https://shop.clevertech.biz/collections/all?page={}"
     products_file = "clever_products.txt"
     delimiter = "\n"
-    session_file = 'session'
+    session_file = 'clever_session'
     with requests.Session() as session:
         if Path(session_file).is_file():
             with open(session_file, 'rb') as f:
